@@ -27,3 +27,4 @@ bin
 vendor/
 tools/vendor
 
+/mnemonics_to_pub_key/

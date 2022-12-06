@@ -1,35 +1,25 @@
 package env
 
 import (
-	"context"
 	"sync"
 
 	"github.com/spf13/viper"
 )
 
 type Config struct {
-	AppConfig AppConfig
-	PgConfig  PgConfig
+	KafkaConfig KafkaConfig
+
+	AgrPubKey        string
+	ExecutionAddress string
+	ForkVersion      string
+	CheckSignature   bool
 }
 
-type AppConfig struct {
-	Name      string
-	Env       string
-	URL       string
-	Port      uint
-	LogFormat string
-	LogLevel  string
-	SentryDsn string
-}
-
-type PgConfig struct {
-	Port     uint
-	Host     string
-	Username string
-	Password string
-	Database string
-	Schema   string
-	SslMode  string
+type KafkaConfig struct {
+	Host    string
+	Topic   string
+	Creds   string
+	GroupID string
 }
 
 var (
@@ -38,13 +28,11 @@ var (
 	onceDefaultClient sync.Once
 )
 
-func Read(ctx context.Context) (*Config, error) {
+func ReadEnv() (*Config, error) {
 	var err error
 
 	onceDefaultClient.Do(func() {
-		viper.SetConfigType("env")
-		viper.AddConfigPath(".")
-		viper.SetConfigFile(".env")
+		viper.SetConfigFile(".env.yml")
 
 		viper.AutomaticEnv()
 		if viperErr := viper.ReadInConfig(); err != nil {
@@ -55,24 +43,16 @@ func Read(ctx context.Context) (*Config, error) {
 		}
 
 		cfg = Config{
-			AppConfig: AppConfig{
-				Name:      viper.GetString("app.name"),
-				Env:       viper.GetString("app.env"),
-				URL:       viper.GetString("app.url"),
-				Port:      viper.GetUint("app.port"),
-				LogFormat: viper.GetString("app.logFormat"),
-				LogLevel:  viper.GetString("app.logLevel"),
-				SentryDsn: viper.GetString("app.sentryDsn"),
+			KafkaConfig: KafkaConfig{
+				Host:    viper.GetString("kafka.host"),
+				Topic:   viper.GetString("kafka.topic"),
+				Creds:   viper.GetString("kafka.creds"),
+				GroupID: viper.GetString("kafka.group_id"),
 			},
-			PgConfig: PgConfig{
-				Port:     viper.GetUint("pg.port"),
-				Host:     viper.GetString("pg.host"),
-				Username: viper.GetString("pg.username"),
-				Password: viper.GetString("pg.password"),
-				Database: viper.GetString("pg.database"),
-				Schema:   viper.GetString("pg.schema"),
-				SslMode:  viper.GetString("pg.sslmode"),
-			},
+			AgrPubKey:        viper.GetString("app.aggregated_bls_pub_key"),
+			ExecutionAddress: viper.GetString("app.execution_address"),
+			ForkVersion:      viper.GetString("app.fork_version"),
+			CheckSignature:   viper.GetBool("app.check_signature"),
 		}
 	})
 
